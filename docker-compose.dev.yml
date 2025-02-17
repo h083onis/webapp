@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev  # 開発用 Dockerfile
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules  # ローカルの node_modules を除外
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - BACKEND_URL=http://localhost:8080
+      - CHOKIDAR_USEPOLLING=true  # ファイル監視を有効化
+      - WATCHPACK_POLLING=true  # Webpack の変更監視を有効化
+    command: ["npm", "run", "dev"]
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev  # 開発用 Dockerfile
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/db?sslmode=disable
+    depends_on:
+      - db
+    command: ["air"]  # Gin のホットリロードツールを使用
+
+  db:
+    build:
+      context: ./db
+      dockerfile: Dockerfile  # 開発/本番で共通の Dockerfile
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-store:/var/lib/postgresql/data
+      - ./db/init.dev.sql:/docker-entrypoint-initdb.d/init.sql  # 開発用データをロード
+
+volumes:
+  db-store:

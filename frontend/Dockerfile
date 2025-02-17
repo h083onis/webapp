@@ -1,24 +1,33 @@
-# ベースイメージを指定
+# ✅ 1. ビルド用のステージ
+FROM node:22-alpine AS builder
+
+# 作業ディレクトリを設定
+WORKDIR /app
+
+# 依存関係のキャッシュを活用
+COPY package.json package-lock.json ./
+RUN npm install --frozen-lockfile
+
+# ソースコードをコピー
+COPY . .
+
+# Next.js アプリケーションをビルド
+RUN npm run build
+
+# ✅ 2. 実行用の軽量ステージ
 FROM node:22-alpine
 
 # 作業ディレクトリを設定
 WORKDIR /app
 
-# キャッシュ利用で効率化するために別でコピー
-COPY package.json package-lock.json ./
+# `builder` ステージから `node_modules` と `.next` をコピー
+COPY --from=builder /app/package.json /app/package-lock.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
 
-# ソースコードをコピー
-COPY . .
-
-# 依存関係をインストール
-RUN npm install
-
-# アプリケーションをビルド
-RUN npm run build
-
-# ポート番号を指定
+# ポートを公開
 EXPOSE 3000
 
-# アプリケーションを起動
-CMD ["npm","run","dev"]
-
+# アプリケーションを起動（本番モード）
+CMD ["npm", "run", "start"]

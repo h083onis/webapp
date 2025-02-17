@@ -1,14 +1,12 @@
 FROM postgres:15-alpine
 
-# 環境変数の設定
+# 環境変数の設定（パスワードは docker-compose.yml で管理）
 ENV POSTGRES_USER=postgres
-ENV POSTGRES_PASSWORD=password
 ENV POSTGRES_DB=db
 
-# 初期データを用意する場合（オプション）
+# 初期データを設定（開発/本番で異なるファイルを docker-compose.yml で指定）
 # COPY init.sql /docker-entrypoint-initdb.d/
 
-# 健全性チェック用のヘルスチェック
+# 健全性チェック（環境変数を exec 形式で展開）
 HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
-  CMD pg_isready -U $POSTGRES_USER -d $POSTGRES_DB || exit 1
-
+  CMD pg_isready -U postgres -d db || exit 1

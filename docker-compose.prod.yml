@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile  # 本番用 Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - BACKEND_URL=http://backend:8080
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile  # 本番用 Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=postgres://postgres:mysecurepassword@db:5432/db?sslmode=disable
+    depends_on:
+      - db
+    command: ["./main"]
+
+  db:
+    build:
+      context: ./db
+      dockerfile: Dockerfile  # 開発/本番で共通の Dockerfile
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecurepassword
+      POSTGRES_DB: db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-store:/var/lib/postgresql/data
+      - ./db/init.prod.sql:/docker-entrypoint-initdb.d/init.sql  # 本番環境はデータなし
+
+volumes:
+  db-store:
