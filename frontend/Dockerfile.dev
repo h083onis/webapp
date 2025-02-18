@@ -1,0 +1,16 @@
+FROM node:22-alpine
+
+WORKDIR /app
+
+# キャッシュ活用
+COPY package.json package-lock.json ./
+RUN npm install --frozen-lockfile
+
+# 開発用にすべてのソースをコピー
+COPY . .
+
+# ポート公開
+EXPOSE 3000
+
+# Next.js の開発モードを実行（ホットリロード有効）
+CMD ["npm", "run", "dev"]
